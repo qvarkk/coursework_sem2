@@ -19,61 +19,87 @@ char *prompt_search() {
   return search_buffer;
 }
 
-void search_for_word() {
+void search_for_word(char *filename) {
+  if (!filename) {
+    printf("\nNo dictionary selected! Add it and try again...\n\n");
+    return;
+  }
+
   char *prompt_buffer = prompt_search();
 
   FILE *fp;
-  char json_buffer[2048];
+  char *json_buffer = (char*)malloc(sizeof(char) * 2048);
 
-  fp = fopen("term_bank_1.json", "r");
-  fread(json_buffer, 2048, 1, fp);
-  fclose(fp);
+  fp = fopen(filename, "r");
+  if (fp) {
+    fread(json_buffer, 2048, 1, fp);
+    fclose(fp);
+  } else {
+    printf("Couldn't open file! Try again later...");
+    return;
+  }
 
   json_object *json = json_tokener_parse(json_buffer);
+  free(json_buffer);
 
-  int found;
+  int found = 0;
   json_object *subarray, *element;
   for (int i = 0; i < json_object_array_length(json); i++) {
     subarray = json_object_array_get_idx(json, i);
     element = json_object_array_get_idx(subarray, 0);
 
     if (!strcmp(json_object_get_string(element), prompt_buffer)) {
+      found = 1;
       break;
     }
   }
 
-  json_object *reses, *res, *name, *pos, *def;
+  if (found) {
+    json_object *reses, *res, *name, *pos, *def;
 
-  reses = json_object_array_get_idx(subarray, 1);
-  
-  for (int k = 0; k < json_object_array_length(reses); k++) {
-    res = json_object_array_get_idx(reses, k);
-    name = json_object_array_get_idx(res, 0);
-    pos = json_object_array_get_idx(res, 1);
-    def = json_object_array_get_idx(res, 2);
+    reses = json_object_array_get_idx(subarray, 1);
+    
+    for (int k = 0; k < json_object_array_length(reses); k++) {
+      res = json_object_array_get_idx(reses, k);
+      name = json_object_array_get_idx(res, 0);
+      pos = json_object_array_get_idx(res, 1);
+      def = json_object_array_get_idx(res, 2);
 
-    printf("\t%i. %s\n", k + 1, json_object_get_string(name));
-    printf("\t   %s\n", json_object_get_string(pos));
-    printf("\t   %s\n\n", json_object_get_string(def));
+      printf("\t%i. %s\n", k + 1, json_object_get_string(name));
+      printf("\t   %s\n", json_object_get_string(pos));
+      printf("\t   %s\n\n", json_object_get_string(def));
+    }
+  } else {
+    printf("\nCouldn't find the word...\n\n> ");
   }
 }
 
 void get_insert_info(char *out, char *pos, char *def) {
   printf("\tEnter the word in target language:\n> ");
-  scanf("%s", out);
+  fgets(out, sizeof(out), stdin);
   printf("\tEnter part of speech (you can leave it blank):\n> ");
-  scanf("%s", pos);
+  fgets(pos, sizeof(pos), stdin);
   printf("\tEnter the definition:\n> ");
-  scanf("%s", def);
+  fgets(def, sizeof(def), stdin);
 }
 
-void insert_word() {
+void insert_word(char *filename) {
+  if (!filename) {
+    printf("\nNo dictionary selected! Add it and try again...\n\n");
+    return;
+  }
+
   FILE *fp;
   char json_buffer[2048];
 
-  fp = fopen("term.json", "r");
-  fread(json_buffer, 2048, 1, fp);
-  fclose(fp);
+  fp = fopen(filename, "r");
+  if (fp) {
+    fread(json_buffer, 2048, 1, fp);
+    fclose(fp);
+  } else {
+    printf("Couldn't open file! Try again later...");
+    return;
+  }
 
   json_object *json = json_tokener_parse(json_buffer);
 
@@ -83,7 +109,7 @@ void insert_word() {
   }
 
   int *size = malloc(sizeof(int));
-  char *inp = malloc(sizeof(char) * 128), *out = malloc(sizeof(char) * 128), *pos = malloc(sizeof(char) * 128), *def = malloc(sizeof(char) * 128);
+  char *inp = (char*)malloc(sizeof(char) * 128), *out = (char*)malloc(sizeof(char) * 128), *pos = (char*)malloc(sizeof(char) * 128), *def = (char*)malloc(sizeof(char) * 128);
   
   printf("Insert.\n\tEnter the word:\n> ");
   scanf("%s", inp);
@@ -104,8 +130,8 @@ void insert_word() {
     json_object_array_add(json, arr);
   }
 
-  fp = fopen("term.json", "w");
-  if (fp != NULL && json != NULL) {
+  fp = fopen(filename, "w");
+  if (fp && json) {
     fprintf(fp, "%s\n", json_object_to_json_string_ext(json, JSON_C_TO_STRING_PRETTY));
     fclose(fp);
   } else {
@@ -115,26 +141,76 @@ void insert_word() {
   json_object_put(json);
 }
 
+void change_dictionary(char **filename) {
+  *filename = (char*)malloc(sizeof(char) * 256);
+  if (!*filename) {
+    printf("\nNot enough memory to open a file...\n\n> ");
+    return;
+  }
+
+  printf("Change dictionary.\n\tEnter filename:\n> ");
+
+  while (1) {
+    fflush(stdin);
+    scanf("%s", *filename);
+    if (*filename != NULL) {
+        FILE *fp;
+        fp = fopen(*filename, "r");
+        if (!fp) {
+          printf("No such file! Try again...\n> ");
+          continue;
+        }
+    } else {
+      printf("Wrong input! Try again...\n> ");
+      continue;
+    }
+
+    char *dot = strrchr(*filename, '.');
+    if (dot) {
+      if (!strcmp(".json", dot)) {
+        printf("\nDictionary %s was successfully opened!\n\n> ", *filename);
+        break;
+      } else {
+        printf("\nWrong file extension! Dictionary has to be .json\n\n> ");
+      }
+    } else {
+      printf("\nWrong file extension! Dictionary has to be .json\n\n> ");
+    }
+  }
+}
+
+#define FILE_BUFFER 256;
+
 int main() {
   char menu_buffer;
+  char *filename = NULL;
+
   while(1) {
+
     printf("To proceed select an option:\n");
     printf("\t1. Search in the dictionary\n");
     printf("\t2. Insert a word into the dictionary\n");
-    printf("\t3. Exit\n\n> ");
+    printf("\t3. Select dictionary\n");
+    printf("\t4. Exit\n\n> ");
 
     scanf(" %c", &menu_buffer);
 
     switch(menu_buffer) {
       case '1':
-        search_for_word();
+        search_for_word(filename);
         break;
       case '2':
-        insert_word();
+        insert_word(filename);
         break;
       case '3':
+        change_dictionary(&filename);
+        break;
+      case '4':
         printf("\nGoodbye!\n\n");
         return 0;
+      default:
+        printf("\nWrong input! Try again...\n\n");
+        break;
     }
 
     fflush(stdin);

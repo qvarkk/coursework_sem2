@@ -1,10 +1,35 @@
 [
   [
-    "qwe",
+    "cat",
     [
-      "qwe",
-      "asd",
-      "zxc"
+      [
+        "кот",
+        "noun",
+        "male cutie pie"
+      ],
+      [
+        "кошка",
+        "noun",
+        "female cutie pie"
+      ]
+    ]
+  ],
+  [
+    "dog",
+    [
+      [
+        "собака",
+        "noun",
+        "good boy"
+      ]
+    ]
+  ],
+  [
+    "hampster",
+    [
+      "хомяк",
+      "noun",
+      "Not"
     ]
   ]
 ]
