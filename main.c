@@ -76,11 +76,11 @@ void search_for_word(char *filename) {
 
 void get_insert_info(char *out, char *pos, char *def) {
   printf("\tEnter the word in target language:\n> ");
-  fgets(out, sizeof(out), stdin);
+  scanf(" %[^\n]", out);
   printf("\tEnter part of speech (you can leave it blank):\n> ");
-  fgets(pos, sizeof(pos), stdin);
+  scanf(" %[^\n]", pos);
   printf("\tEnter the definition:\n> ");
-  fgets(def, sizeof(def), stdin);
+  scanf(" %[^\n]", def);
 }
 
 void insert_word(char *filename) {
@@ -110,35 +110,42 @@ void insert_word(char *filename) {
 
   int *size = malloc(sizeof(int));
   char *inp = (char*)malloc(sizeof(char) * 128), *out = (char*)malloc(sizeof(char) * 128), *pos = (char*)malloc(sizeof(char) * 128), *def = (char*)malloc(sizeof(char) * 128);
-  
+  char *sth = (char*)malloc(sizeof(char) * 128);
+
   printf("Insert.\n\tEnter the word:\n> ");
-  scanf("%s", inp);
+  scanf(" %[^\n]", inp);
   printf("\tEnter how many definitions will the word have:\n> ");
   scanf("%i", size);
 
+  json_object *arr = json_object_new_array();
+  json_object *subarray = json_object_new_array();
+  json_object_array_add(arr, json_object_new_string(inp));
+  
+
   for (int i = 0; i < *size; i++) {
-    json_object *subarray = json_object_new_array();
-    json_object *arr = json_object_new_array();
+    json_object *defarray = json_object_new_array();
 
     get_insert_info(out, pos, def);
     
-    json_object_array_add(arr, json_object_new_string(inp));
-    json_object_array_add(subarray, json_object_new_string(out));
-    json_object_array_add(subarray, json_object_new_string(pos));
-    json_object_array_add(subarray, json_object_new_string(def));
-    json_object_array_add(arr, subarray);
-    json_object_array_add(json, arr);
+    json_object_array_add(defarray, json_object_new_string(out));
+    json_object_array_add(defarray, json_object_new_string(pos));
+    json_object_array_add(defarray, json_object_new_string(def));
+    json_object_array_add(subarray, defarray);
   }
+  json_object_array_add(arr, subarray);
+  json_object_array_add(json, arr);
 
   fp = fopen(filename, "w");
   if (fp && json) {
     fprintf(fp, "%s\n", json_object_to_json_string_ext(json, JSON_C_TO_STRING_PRETTY));
     fclose(fp);
   } else {
-    printf("Meow\n");
+    printf("Couldn't open dictionary or read it...\n");
   }
 
   json_object_put(json);
+
+  printf("\nWord %s was added successfully!\n\n> ", inp);
 }
 
 void change_dictionary(char **filename) {
@@ -182,7 +189,7 @@ void change_dictionary(char **filename) {
 #define FILE_BUFFER 256;
 
 int main() {
-  char menu_buffer;
+  char *menu_buffer = (char*)malloc(sizeof(char) * 50);
   char *filename = NULL;
 
   while(1) {
@@ -193,9 +200,9 @@ int main() {
     printf("\t3. Select dictionary\n");
     printf("\t4. Exit\n\n> ");
 
-    scanf(" %c", &menu_buffer);
+    scanf(" %c", menu_buffer);
 
-    switch(menu_buffer) {
+    switch(menu_buffer[0]) {
       case '1':
         search_for_word(filename);
         break;

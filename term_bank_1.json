@@ -25,11 +25,18 @@
     ]
   ],
   [
-    "hampster",
+    "fish",
     [
-      "хомяк",
-      "noun",
-      "Not"
+      [
+        "рыба",
+        "noun",
+        "An animal that lives underwater"
+      ],
+      [
+        "рыбачить",
+        "verb",
+        "To fish"
+      ]
     ]
   ]
 ]
