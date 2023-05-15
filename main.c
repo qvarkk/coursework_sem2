@@ -3,36 +3,57 @@
 #include <stdlib.h>
 #include <json-c/json.h>
 
-char search_buffer[128];
-char *prompt_search() {
+#define JSON_BUF_SIZE 2048
+#define FILENAME_BUF_SIZE 256
+#define SEARCH_BUF_SIZE 128
+#define DEF_BUF_SIZE 128
+
+int allocate(char **str, int size) {
+  char *temp;
+  temp = realloc(*str, sizeof(char) * size);
+  // temp = malloc(sizeof(char) * size);
+  if (!temp) {
+    printf("\nCouldn't allocate memory!\n\n");
+    return 0;
+  }
+  *str = temp;
+  return 1;
+}
+
+char *prompt_search(char *buffer) {
   printf("Search.\n\tEnter a word to search for:\n> ");
 
   while (1) {
-    scanf("%s", search_buffer);
-    if (search_buffer != NULL) {
+    scanf(" %127[^\n]", buffer);
+    // scanf("%s", buffer);
+    if (buffer != NULL) {
       break;
     }
     printf("Wrong input! Try again...\n> ");
     fflush(stdin);
   }
-
-  return search_buffer;
 }
 
 void search_for_word(char *filename) {
   if (!filename) {
-    printf("\nNo dictionary selected! Add it and try again...\n\n");
+    printf("\nNo dictionary selected! Select it and try again...\n\n");
     return;
   }
 
-  char *prompt_buffer = prompt_search();
+  char *search_buffer = NULL;
+  if (!allocate(&search_buffer, SEARCH_BUF_SIZE))
+    return;
+
+  prompt_search(search_buffer);
 
   FILE *fp;
-  char *json_buffer = (char*)malloc(sizeof(char) * 2048);
+  char *json_buffer = NULL;
+  if (!allocate(&json_buffer, JSON_BUF_SIZE))
+    return;
 
   fp = fopen(filename, "r");
   if (fp) {
-    fread(json_buffer, 2048, 1, fp);
+    fread(json_buffer, JSON_BUF_SIZE, 1, fp);
     fclose(fp);
   } else {
     printf("Couldn't open file! Try again later...");
@@ -48,7 +69,7 @@ void search_for_word(char *filename) {
     subarray = json_object_array_get_idx(json, i);
     element = json_object_array_get_idx(subarray, 0);
 
-    if (!strcmp(json_object_get_string(element), prompt_buffer)) {
+    if (!strcmp(json_object_get_string(element), search_buffer)) {
       found = 1;
       break;
     }
@@ -90,11 +111,13 @@ void insert_word(char *filename) {
   }
 
   FILE *fp;
-  char json_buffer[2048];
+  char *json_buffer = NULL;
+  if (!allocate(&json_buffer, JSON_BUF_SIZE))
+    return;
 
   fp = fopen(filename, "r");
   if (fp) {
-    fread(json_buffer, 2048, 1, fp);
+    fread(json_buffer, JSON_BUF_SIZE, 1, fp);
     fclose(fp);
   } else {
     printf("Couldn't open file! Try again later...");
@@ -109,13 +132,28 @@ void insert_word(char *filename) {
   }
 
   int *size = malloc(sizeof(int));
-  char *inp = (char*)malloc(sizeof(char) * 128), *out = (char*)malloc(sizeof(char) * 128), *pos = (char*)malloc(sizeof(char) * 128), *def = (char*)malloc(sizeof(char) * 128);
-  char *sth = (char*)malloc(sizeof(char) * 128);
+  char *inp = NULL, *out = NULL, *pos = NULL, *def = NULL;
+  if (!allocate(&inp, DEF_BUF_SIZE) || !allocate(&out, DEF_BUF_SIZE) || !allocate(&pos, DEF_BUF_SIZE) || !allocate(&def, DEF_BUF_SIZE))
+    return;
 
-  printf("Insert.\n\tEnter the word:\n> ");
-  scanf(" %[^\n]", inp);
-  printf("\tEnter how many definitions will the word have:\n> ");
-  scanf("%i", size);
+  while (1) {
+    printf("Insert.\n\tEnter the word:\n> ");
+    fflush(stdin);
+    if (!scanf(" %[^\n]", inp)) {
+      printf("\nWrong input! Try again...\n\n> ");
+      continue;
+    }
+    while (1) {
+      printf("\tEnter how many definitions will the word have:\n> ");
+      fflush(stdin);
+      if (!scanf("%i", size)) {
+        printf("\nWrong input! Try again...\n\n> ");
+        continue;
+      }
+      break;
+    }
+    break;
+  }
 
   json_object *arr = json_object_new_array();
   json_object *subarray = json_object_new_array();
@@ -149,7 +187,9 @@ void insert_word(char *filename) {
 }
 
 void change_dictionary(char **filename) {
-  *filename = (char*)malloc(sizeof(char) * 256);
+  if (!allocate(filename, FILENAME_BUF_SIZE))
+    return;
+
   if (!*filename) {
     printf("\nNot enough memory to open a file...\n\n> ");
     return;
@@ -186,10 +226,8 @@ void change_dictionary(char **filename) {
   }
 }
 
-#define FILE_BUFFER 256;
-
 int main() {
-  char *menu_buffer = (char*)malloc(sizeof(char) * 50);
+  char *menu_buffer = malloc(sizeof(char) * 50);
   char *filename = NULL;
 
   while(1) {
