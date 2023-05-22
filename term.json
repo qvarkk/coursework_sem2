@@ -1,36 +1,11 @@
 [
   [
-    "cat",
+    "aa",
     [
       [
-        "кот",
-        "noun",
-        "male cutie pie"
-      ],
-      [
-        "кошка",
-        "noun",
-        "female cutie pie"
-      ]
-    ]
-  ],
-  [
-    "dog",
-    [
-      [
-        "собака",
-        "noun",
-        "good boy"
-      ]
-    ]
-  ],
-  [
-    "alligator",
-    [
-      [
-        "аллигатор",
-        "noun",
-        "something alike crocodile"
+        "aa",
+        "aa",
+        "aa"
       ]
     ]
   ]
