@@ -7,6 +7,56 @@
 #define SEARCH_BUF_SIZE 128
 #define DEF_BUF_SIZE 128
 
+// Structure for BST node
+typedef struct BSTNode {
+  const char *word;
+  int index;
+  struct BSTNode *left;
+  struct BSTNode *right;
+} BSTNode;
+
+// Function to create a new BST node
+BSTNode* createBSTNode(const char *word, int index) {
+  BSTNode *newNode = (BSTNode*)malloc(sizeof(BSTNode));
+  newNode->word = word;
+  newNode->index = index;
+  newNode->left = NULL;
+  newNode->right = NULL;
+  return newNode;
+}
+
+// Function to insert a node into the BST
+BSTNode* insertBSTNode(BSTNode *root, const char *word, int index) {
+  // Base case: Empty tree, create a new node
+  if (root == NULL) {
+    return createBSTNode(word, index);
+  }
+
+  // Recursive insertion
+  if (strcmp(word, root->word) < 0) {
+    root->left = insertBSTNode(root->left, word, index);
+  } else {
+    root->right = insertBSTNode(root->right, word, index);
+  }
+
+  return root;
+}
+
+// Function to search for a word in the BST and return its index
+int searchBSTNode(BSTNode *root, const char *word) {
+  // Base cases: Empty tree or word found at the current node
+  if (root == NULL || strcmp(word, root->word) == 0) {
+    return (root == NULL) ? -1 : root->index;
+  }
+
+  // Recursive search
+  if (strcmp(word, root->word) < 0) {
+    return searchBSTNode(root->left, word);
+  } else {
+    return searchBSTNode(root->right, word);
+  }
+}
+
 int allocate(char **str, int size)
 {
   char *temp;
@@ -35,78 +85,6 @@ char *prompt_search(char *buffer)
     fflush(stdin);
   }
 }
-
-// void search_for_word(char *filename, int filesize)
-// {
-//   if (!filename)
-//   {
-//     printf("\nNo dictionary selected! Select it and try again...\n\n");
-//     return;
-//   }
-
-//   char *search_buffer = NULL;
-//   if (!allocate(&search_buffer, SEARCH_BUF_SIZE))
-//     return;
-
-//   prompt_search(search_buffer);
-
-//   FILE *fp;
-//   char *json_buffer = NULL;
-//   if (!allocate(&json_buffer, JSON_BUF_SIZE))
-//     return;
-
-//   fp = fopen(filename, "r");
-//   if (fp)
-//   {
-//     fread(json_buffer, JSON_BUF_SIZE, 1, fp);
-//     fclose(fp);
-//   }
-//   else
-//   {
-//     printf("Couldn't open file! Try again later...");
-//     return;
-//   }
-
-//   json_object *json = json_tokener_parse(json_buffer);
-//   free(json_buffer);
-
-//   int found = 0;
-//   json_object *subarray, *element;
-//   for (int i = 0; i < json_object_array_length(json); i++)
-//   {
-//     subarray = json_object_array_get_idx(json, i);
-//     element = json_object_array_get_idx(subarray, 0);
-
-//     if (!strcmp(json_object_get_string(element), search_buffer))
-//     {
-//       found = 1;
-//       break;
-//     }
-//   }
-
-//   if (found)
-//   {
-//     json_object *reses, *res, *name, *pos, *def;
-
-//     reses = json_object_array_get_idx(subarray, 1);
-
-//     for (int k = 0; k < json_object_array_length(reses); k++)
-//     {
-//       res = json_object_array_get_idx(reses, k);
-//       name = json_object_array_get_idx(res, 0);
-//       pos = json_object_array_get_idx(res, 1);
-//       def = json_object_array_get_idx(res, 2);
-
-//       printf("\t%i. %s\n", k + 1, json_object_get_string(name));
-//       printf("\t   %s\n", json_object_get_string(pos));
-//       printf("\t   %s\n\n", json_object_get_string(def));
-//     }
-//   }
-//   else
-//   {
-//     printf("\nCouldn't find the word...\n\n> ");
-//   }
-// }
 
 void search_for_word_file(FILE *file, long int *filesize)
 {
@@ -170,6 +148,92 @@ void search_for_word_file(FILE *file, long int *filesize)
   }
 }
 
+void BSTSearch(FILE *file, long int *filesize) {
+  if (!file)
+  {
+    printf("\nNo dictionary selected! Select it and try again...\n\n");
+    return;
+  }
+
+  char *search_buffer = NULL;
+  if (!allocate(&search_buffer, SEARCH_BUF_SIZE))
+    return;
+
+  prompt_search(search_buffer);
+
+  char *json_buffer = NULL;
+  if (!allocate(&json_buffer, *filesize))
+    return;
+
+  fread(json_buffer, *filesize, 1, file);
+  fseek(file, 0, SEEK_SET);
+
+  json_object *json = json_tokener_parse(json_buffer);
+  json_object *json_array = json_object_get(json);
+
+  if (json_array != NULL) {
+    int array_length = json_object_array_length(json_array);
+ 
+    // Create a Binary Search Tree (BST) from the JSON array
+    BSTNode *root = NULL;
+
+    for (int i = 0; i < array_length; i++) {
+      json_object *entry = json_object_array_get_idx(json_array, i);
+      const char *word = json_object_get_string(json_object_array_get_idx(entry, 0));
+      root = insertBSTNode(root, word, i);
+    }
+
+    // Search for a word in the BST
+    int index = searchBSTNode(root, search_buffer);
+
+    if (index != 1)
+    {
+      json_object *subarray = json_object_array_get_idx(json, index);
+      json_object *reses, *res, *name, *pos, *def;
+
+      reses = json_object_array_get_idx(subarray, 1);
+
+      for (int k = 0; k < json_object_array_length(reses); k++)
+      {
+        res = json_object_array_get_idx(reses, k);
+        name = json_object_array_get_idx(res, 0);
+        pos = json_object_array_get_idx(res, 1);
+        def = json_object_array_get_idx(res, 2);
+
+        printf("\t%i. %s\n", k + 1, json_object_get_string(name));
+        printf("\t   %s\n", json_object_get_string(pos));
+        printf("\t   %s\n\n", json_object_get_string(def));
+      }
+    } else {
+      printf("No such word found!\n\n> ");
+    }
+
+    // Clean up
+    json_object_put(json_array);
+    free(root);
+  }
+}
+
+int binarySearch(json_object *json, char * value) {
+  int start_index = 0;
+  int end_index = json_object_array_length(json) - 1;
+  int middle = start_index + (end_index- start_index )/2;
+
+  while (start_index <= end_index) {
+    json_object *res =  json_object_array_get_idx(json, middle);
+    if (!strcmp(json_object_get_string(res), value)) {
+      return middle;
+    }
+    if (json_object_get_string(res) < value) {
+      start_index = middle + 1;
+    } else {
+      end_index = middle - 1;
+    }
+  }
+
+  return -1;
+}
+
 void get_insert_info(char *out, char *pos, char *def)
 {
   printf("\tEnter the word in target language:\n> ");
@@ -179,102 +243,6 @@ void get_insert_info(char *out, char *pos, char *def)
   printf("\tEnter the definition:\n> ");
   scanf(" %[^\n]", def);
 }
-
-// void insert_word(char *filename, long int **filesize)
-// {
-//   if (!filename)
-//   {
-//     printf("\nNo dictionary selected! Add it and try again...\n\n");
-//     return;
-//   }
-
-//   FILE *fp;
-//   char *json_buffer = NULL;
-//   if (!allocate(&json_buffer, JSON_BUF_SIZE))
-//     return;
-
-//   fp = fopen(filename, "r");
-//   if (fp)
-//   {
-//     fread(json_buffer, JSON_BUF_SIZE, 1, fp);
-//     fclose(fp);
-//   }
-//   else
-//   {
-//     printf("Couldn't open file! Try again later...");
-//     return;
-//   }
-
-//   json_object *json = json_tokener_parse(json_buffer);
-
-//   if (!json_object_is_type(json, json_type_array))
-//   {
-//     json_object_put(json);
-//     json = json_object_new_array();
-//   }
-
-//   int *size = malloc(sizeof(int));
-//   char *inp = NULL, *out = NULL, *pos = NULL, *def = NULL;
-//   if (!allocate(&inp, DEF_BUF_SIZE) || !allocate(&out, DEF_BUF_SIZE) || !allocate(&pos, DEF_BUF_SIZE) || !allocate(&def, DEF_BUF_SIZE))
-//     return;
-
-//   while (1)
-//   {
-//     printf("Insert.\n\tEnter the word:\n> ");
-//     fflush(stdin);
-//     if (!scanf(" %[^\n]", inp))
-//     {
-//       printf("\nWrong input! Try again...\n\n> ");
-//       continue;
-//     }
-//     while (1)
-//     {
-//       printf("\tEnter how many definitions will the word have:\n> ");
-//       fflush(stdin);
-//       if (!scanf("%i", size))
-//       {
-//         printf("\nWrong input! Try again...\n\n> ");
-//         continue;
-//       }
-//       break;
-//     }
-//     break;
-//   }
-
-//   json_object *arr = json_object_new_array();
-//   json_object *subarray = json_object_new_array();
-//   json_object_array_add(arr, json_object_new_string(inp));
-
-//   // buffer size
-//   for (int i = 0; i < *size; i++)
-//   {
-//     json_object *defarray = json_object_new_array();
-
-//     get_insert_info(out, pos, def);
-
-//     json_object_array_add(defarray, json_object_new_string(out));
-//     json_object_array_add(defarray, json_object_new_string(pos));
-//     json_object_array_add(defarray, json_object_new_string(def));
-//     json_object_array_add(subarray, defarray);
-//   }
-//   json_object_array_add(arr, subarray);
-//   json_object_array_add(json, arr);
-
-//   fp = fopen(filename, "w");
-//   if (fp && json)
-//   {
-//     fprintf(fp, "%s\n", json_object_to_json_string_ext(json, JSON_C_TO_STRING_PRETTY));
-//     fclose(fp);
-//   }
-//   else
-//   {
-//     printf("Couldn't open dictionary or read it...\n");
-//   }
-
-//   json_object_put(json);
-
-//   printf("\nWord %s was added successfully!\n\n> ", inp);
-// }
 
 void insert_word_file(FILE **fp, long int **filesize)
 {
@@ -365,60 +333,6 @@ void insert_word_file(FILE **fp, long int **filesize)
   printf("\nWord %s was added successfully!\n\n> ", inp);
 }
 
-void change_dictionary(char **filename)
-{
-  if (!allocate(filename, FILENAME_BUF_SIZE))
-    return;
-
-  if (!*filename)
-  {
-    printf("\nNot enough memory to open a file...\n\n> ");
-    return;
-  }
-
-  printf("Change dictionary.\n\tEnter filename:\n> ");
-
-  while (1)
-  {
-    fflush(stdin);
-    scanf("%s", *filename);
-    if (*filename != NULL)
-    {
-      FILE *fp;
-      fp = fopen(*filename, "r+");
-      if (!fp)
-      {
-        printf("No such file! Try again...\n> ");
-        continue;
-      }
-      fclose(fp);
-    }
-    else
-    {
-      printf("Wrong input! Try again...\n> ");
-      continue;
-    }
-
-    char *dot = strrchr(*filename, '.');
-    if (dot)
-    {
-      if (!strcmp(".json", dot))
-      {
-        printf("\nDictionary %s was successfully opened!\n\n> ", *filename);
-        break;
-      }
-      else
-      {
-        printf("\nWrong file extension! Dictionary has to be .json\n\n> ");
-      }
-    }
-    else
-    {
-      printf("\nWrong file extension! Dictionary has to be .json\n\n> ");
-    }
-  }
-}
-
 void change_dictionary_file(FILE **fp, long int **filesize)
 {
   char *filename = NULL;
@@ -432,12 +346,15 @@ void change_dictionary_file(FILE **fp, long int **filesize)
     return;
   }
 
-  printf("Change dictionary.\n\tEnter filename:\n> ");
+  printf("Change dictionary.\n\tEnter filename (or x to exit):\n> ");
 
   while (1)
   {
     fflush(stdin);
     scanf("%s", filename);
+    if (filename[0] == 'x') {
+      return;
+    }
     if (filename != NULL)
     {
       *fp = fopen(filename, "r+");
@@ -489,10 +406,11 @@ int main()
   {
 
     printf("To proceed select an option:\n");
-    printf("\t1. Search in the dictionary\n");
-    printf("\t2. Insert a word into the dictionary\n");
-    printf("\t3. Select dictionary\n");
-    printf("\t4. Exit\n\n> ");
+    printf("\t1. Search in the dictionary (loop)\n");
+    printf("\t2. Search in the dictionary (BST, sometimes it doesn't work)\n");
+    printf("\t3. Insert a word into the dictionary\n");
+    printf("\t4. Select dictionary\n");
+    printf("\t5. Exit\n\n> ");
 
     scanf(" %c", menu_buffer);
 
@@ -502,12 +420,15 @@ int main()
       search_for_word_file(file, filesize);
       break;
     case '2':
-      insert_word_file(&file, &filesize);
+      BSTSearch(file, filesize);
       break;
     case '3':
-      change_dictionary_file(&file, &filesize);
+      insert_word_file(&file, &filesize);
       break;
     case '4':
+      change_dictionary_file(&file, &filesize);
+      break;
+    case '5':
       printf("\nGoodbye!\n\n");
       return 0;
     default:
