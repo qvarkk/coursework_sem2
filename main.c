@@ -7,7 +7,6 @@
 #define SEARCH_BUF_SIZE 128
 #define DEF_BUF_SIZE 128
 
-// Structure for BST node
 typedef struct BSTNode {
   const char *word;
   int index;
@@ -15,7 +14,6 @@ typedef struct BSTNode {
   struct BSTNode *right;
 } BSTNode;
 
-// Function to create a new BST node
 BSTNode* createBSTNode(const char *word, int index) {
   BSTNode *newNode = (BSTNode*)malloc(sizeof(BSTNode));
   newNode->word = word;
@@ -25,14 +23,11 @@ BSTNode* createBSTNode(const char *word, int index) {
   return newNode;
 }
 
-// Function to insert a node into the BST
 BSTNode* insertBSTNode(BSTNode *root, const char *word, int index) {
-  // Base case: Empty tree, create a new node
   if (root == NULL) {
     return createBSTNode(word, index);
   }
 
-  // Recursive insertion
   if (strcmp(word, root->word) < 0) {
     root->left = insertBSTNode(root->left, word, index);
   } else {
@@ -42,14 +37,11 @@ BSTNode* insertBSTNode(BSTNode *root, const char *word, int index) {
   return root;
 }
 
-// Function to search for a word in the BST and return its index
 int searchBSTNode(BSTNode *root, const char *word) {
-  // Base cases: Empty tree or word found at the current node
   if (root == NULL || strcmp(word, root->word) == 0) {
     return (root == NULL) ? -1 : root->index;
   }
 
-  // Recursive search
   if (strcmp(word, root->word) < 0) {
     return searchBSTNode(root->left, word);
   } else {
@@ -174,7 +166,6 @@ void BSTSearch(FILE *file, long int *filesize) {
   if (json_array != NULL) {
     int array_length = json_object_array_length(json_array);
  
-    // Create a Binary Search Tree (BST) from the JSON array
     BSTNode *root = NULL;
 
     for (int i = 0; i < array_length; i++) {
@@ -183,10 +174,9 @@ void BSTSearch(FILE *file, long int *filesize) {
       root = insertBSTNode(root, word, i);
     }
 
-    // Search for a word in the BST
     int index = searchBSTNode(root, search_buffer);
 
-    if (index != 1)
+    if (index != -1)
     {
       json_object *subarray = json_object_array_get_idx(json, index);
       json_object *reses, *res, *name, *pos, *def;
@@ -208,30 +198,9 @@ void BSTSearch(FILE *file, long int *filesize) {
       printf("No such word found!\n\n> ");
     }
 
-    // Clean up
     json_object_put(json_array);
     free(root);
   }
-}
-
-int binarySearch(json_object *json, char * value) {
-  int start_index = 0;
-  int end_index = json_object_array_length(json) - 1;
-  int middle = start_index + (end_index- start_index )/2;
-
-  while (start_index <= end_index) {
-    json_object *res =  json_object_array_get_idx(json, middle);
-    if (!strcmp(json_object_get_string(res), value)) {
-      return middle;
-    }
-    if (json_object_get_string(res) < value) {
-      start_index = middle + 1;
-    } else {
-      end_index = middle - 1;
-    }
-  }
-
-  return -1;
 }
 
 void get_insert_info(char *out, char *pos, char *def)
@@ -299,7 +268,6 @@ void insert_word_file(FILE **fp, long int **filesize)
   json_object *subarray = json_object_new_array();
   json_object_array_add(arr, json_object_new_string(inp));
 
-  // buffer size
   for (int i = 0; i < *size; i++)
   {
     json_object *defarray = json_object_new_array();

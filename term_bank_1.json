@@ -1,20 +1,5 @@
 [
   [
-    "cat",
-    [
-      [
-        "кот",
-        "noun",
-        "male cutie pie"
-      ],
-      [
-        "кошка",
-        "noun",
-        "female cutie pie"
-      ]
-    ]
-  ],
-  [
     "dog",
     [
       [
@@ -36,16 +21,6 @@
         "рыбачить",
         "verb",
         "To fish"
-      ]
-    ]
-  ],
-  [
-    "crocodile",
-    [
-      [
-        "крокодил",
-        "noun",
-        "Animal like an alligator"
       ]
     ]
   ],
@@ -75,6 +50,21 @@
     ]
   ],
   [
+    "cat",
+    [
+      [
+        "кот",
+        "noun",
+        "male cutie pie"
+      ],
+      [
+        "кошка",
+        "noun",
+        "female cutie pie"
+      ]
+    ]
+  ],
+  [
     "uwu",
     [
       [
@@ -96,6 +86,16 @@
         "ауацау",
         "ауц",
         "ауц"
+      ]
+    ]
+  ],
+  [
+    "alligator",
+    [
+      [
+        "аллигатор",
+        "noun",
+        "crocodile but called another name"
       ]
     ]
   ]
