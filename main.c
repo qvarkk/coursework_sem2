@@ -375,7 +375,7 @@ int main()
 
     printf("To proceed select an option:\n");
     printf("\t1. Search in the dictionary (loop)\n");
-    printf("\t2. Search in the dictionary (BST, sometimes it doesn't work)\n");
+    printf("\t2. Search in the dictionary (BST)\n");
     printf("\t3. Insert a word into the dictionary\n");
     printf("\t4. Select dictionary\n");
     printf("\t5. Exit\n\n> ");
